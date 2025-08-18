@@ -40,9 +40,9 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.14.0</version>
             <configuration>
+                <source>${maven.compiler.source}</source>
+                <target>${maven.compiler.target}</target>
                 <annotationProcessorPaths>
-                    <source>${maven.compiler.source}</source>
-                    <target>${maven.compiler.target}</target>
                     <path>
                         <groupId>org.projectlombok</groupId>
                         <artifactId>lombok</artifactId>
