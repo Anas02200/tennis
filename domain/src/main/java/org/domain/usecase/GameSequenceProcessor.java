@@ -1,5 +1,7 @@
 package org.domain.usecase;
 
+import lombok.extern.slf4j.Slf4j;
+import org.domain.exception.InvalidSequenceException;
 import org.domain.model.GameStatus;
 import org.domain.model.Player;
 import org.domain.model.Score;
@@ -10,25 +12,27 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+@Slf4j
 public class GameSequenceProcessor {
 
 
     public List<Score> processGameSequence(String sequence) {
+        log.info("processing sequence : {}" , sequence);
         if (sequence == null || sequence.trim().isEmpty()) {
-            throw new IllegalArgumentException("Sequence cannot be null or empty");
+            throw new InvalidSequenceException("Sequence cannot be null or empty");
         }
 
         // Extract unique players from sequence
         Set<Character> uniqueChars = new HashSet<>();
         for (char c : sequence.toUpperCase().toCharArray()) {
             if (!Character.isLetter(c)) {
-                throw new IllegalArgumentException("Invalid character in sequence: " + c + ". Only letters are allowed.");
+                throw new InvalidSequenceException("Invalid character in sequence: " + c + ". Only letters are allowed.");
             }
             uniqueChars.add(c);
         }
 
         if (uniqueChars.size() != 2) {
-            throw new IllegalArgumentException("Sequence must contain exactly two different letters. Found: " + uniqueChars.size());
+            throw new InvalidSequenceException("Sequence must contain exactly two different letters. Found: " + uniqueChars.size());
         }
 
         // Convert to Player objects
@@ -53,7 +57,7 @@ public class GameSequenceProcessor {
             Score score = game.addPoint(currentPlayer);
             intermediateScores.add(score);
 
-            if (score.getStatus() == GameStatus.FINISHED) {
+            if (score.status() == GameStatus.FINISHED) {
                 break; // Game is over
             }
         }
@@ -61,13 +65,5 @@ public class GameSequenceProcessor {
         return intermediateScores;
     }
 
-    public String formatScore(Score score) {
-        return switch (score.getStatus()) {
-            case DEUCE -> "Deuce";
-            case ADVANTAGE -> "Advantage Player " + score.getAdvantagePlayer();
-            case FINISHED -> "Player " + score.getWinner() + " wins the game";
-            default -> "Player " + score.getPlayer1() + " : " + score.getPlayer1ScoreDisplay() +
-                    " / Player " + score.getPlayer2() + " : " + score.getPlayer2ScoreDisplay();
-        };
-    }
+
 }

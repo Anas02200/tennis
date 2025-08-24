@@ -1,5 +1,7 @@
 package org.domain.usecase;
 
+
+
 public class TennisScoreQuery {
     private final GameSequenceProcessor gameSequenceProcessor;
 
@@ -8,13 +10,11 @@ public class TennisScoreQuery {
         this.gameSequenceProcessor = tennisScoreService;
     }
 
-    public GameResultDto execute(String sequence) {
+    public GameResult execute(String sequence) {
         var scores = gameSequenceProcessor.processGameSequence(sequence);
-        var formattedScores = scores.stream()
-                .map(gameSequenceProcessor::formatScore)
-                .toList();
-
-        return new GameResultDto(sequence, formattedScores);
+        return new GameResult(sequence, scores);
     }
+
+
 
 }

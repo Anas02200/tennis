@@ -1,5 +1,7 @@
 package org.domain.model;
-//todo add logs and custom exceptions later
+
+import org.domain.exception.GameStateException;
+
 public class TennisGame {
     private Player player1;
     private Player player2;
@@ -8,7 +10,7 @@ public class TennisGame {
 
     public TennisGame(Player player1, Player player2) {
         if (player1.equals(player2)) {
-            throw new IllegalArgumentException("Players must be different");
+            throw new GameStateException("Players must be different");
         }
         this.player1 = player1;
         this.player2 = player2;
@@ -20,7 +22,7 @@ public class TennisGame {
 
     public Score addPoint(Player playerWhoScored) {
         if (status == GameStatus.FINISHED) {
-            throw new IllegalStateException("Game is already finished");
+            throw new GameStateException("Game is already finished");
         }
 
         // Update the player who scored
@@ -29,7 +31,7 @@ public class TennisGame {
         } else if (playerWhoScored.equals(player2)) {
             player2 = player2.addPoint();
         } else {
-            throw new IllegalArgumentException("Player " + playerWhoScored + " is not part of this game");
+            throw new GameStateException("Player " + playerWhoScored + " is not part of this game");
         }
 
         updateGameStatus();
@@ -68,12 +70,5 @@ public class TennisGame {
             status = GameStatus.IN_PROGRESS;
         }
     }
-
-//    public void reset() {
-//        player1 = player1.reset();
-//        player2 = player2.reset();
-//        status = GameStatus.IN_PROGRESS;
-//        winner = null;
-//    }
 
 }

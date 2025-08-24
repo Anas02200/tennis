@@ -2,7 +2,6 @@ package org.domain.model;
 
 
 import lombok.Getter;
-import lombok.experimental.Accessors;
 
 
 @Getter

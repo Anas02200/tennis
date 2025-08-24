@@ -1,26 +1,25 @@
-package org.infrastructure.web;
-//todo add mapper between domain and api // add exception handler
+package org.infrastructure.web.endpoints;
 
-import org.domain.usecase.GameResultDto;
 import org.domain.usecase.TennisScoreQuery;
-import org.infrastructure.web.request.GameSequenceDto;
+import org.infrastructure.web.request.GameSequenceRequest;
+import org.infrastructure.web.response.GameResultResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/tennis")
-public class TennisScoreApi {
+public class TennisScoreEndpoint {
 
     private final TennisScoreQuery tennisScoreQuery;
 
-    public TennisScoreApi(TennisScoreQuery tennisScoreQuery) {
+    public TennisScoreEndpoint(TennisScoreQuery tennisScoreQuery) {
         this.tennisScoreQuery = tennisScoreQuery;
     }
 
     @PostMapping("/play")
-    public ResponseEntity<GameResultDto> playGame(@RequestBody GameSequenceDto request) {
+    public ResponseEntity<GameResultResponse> playGame(@RequestBody GameSequenceRequest request) {
         try {
-            GameResultDto result = tennisScoreQuery.execute(request.sequence());
+            GameResultResponse result = GameResultResponse.of(tennisScoreQuery.execute(request.sequence()));
             return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
@@ -28,9 +27,9 @@ public class TennisScoreApi {
     }
 
     @GetMapping("/play/{sequence}")
-    public ResponseEntity<GameResultDto> playGamePath(@PathVariable("sequence") String sequence) {
+    public ResponseEntity<GameResultResponse> playGamePath(@PathVariable("sequence") String sequence) {
         try {
-            GameResultDto result = tennisScoreQuery.execute(sequence);
+            GameResultResponse result = GameResultResponse.of(tennisScoreQuery.execute(sequence));
             return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
