@@ -25,11 +25,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 //todo fix tests
 
 @WebMvcTest(controllers = TennisScoreEndpoint.class)
-@ContextConfiguration(classes =Config.class)
+@ContextConfiguration(classes = Config.class)
 class TennisScoreEndpointTest {
 
     public static final String SEQUENCE = "MNMNMN";
     public static final String SEQUENCE1 = "XYXYXX";
+    public static final String BASE_URI = "/api/v1/tennis/play";
+    public static final String SEPARATOR = "/";
     @Autowired
     private MockMvc mockMvc;
     @MockitoBean
@@ -42,21 +44,24 @@ class TennisScoreEndpointTest {
         when(tennisScoreQuery.execute(any())).thenReturn(new GameResult(SEQUENCE1, Collections.emptyList()));
         GameSequenceRequest request = new GameSequenceRequest(SEQUENCE1);
 
-        mockMvc.perform(post("/api/v1/tennis/play")
+        mockMvc.perform(post(BASE_URI)
+
+
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.sequence").value(SEQUENCE1))
                 .andExpect(jsonPath("$.scores").isArray());
+        //todo push the tests further later
 //                .andExpect(jsonPath("$.scores[0]").value("Player X : 15 / Player Y : 0"));
     }
 
     @Test
     void testPlayGameByPathEndpoint() throws Exception {
         when(tennisScoreQuery.execute(any())).thenReturn(new GameResult(SEQUENCE, Collections.emptyList()));
-        mockMvc.perform(get("/api/v1/tennis/play/MNMNMN"))
+        mockMvc.perform(get(BASE_URI + SEPARATOR +SEQUENCE))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.sequence").value("MNMNMN"))
+                .andExpect(jsonPath("$.sequence").value(SEQUENCE))
                 .andExpect(jsonPath("$.scores").isArray());
     }
 }

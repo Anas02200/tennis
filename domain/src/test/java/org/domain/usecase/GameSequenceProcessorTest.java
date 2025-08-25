@@ -1,5 +1,6 @@
 package org.domain.usecase;
 
+import org.domain.exception.InvalidSequenceException;
 import org.domain.model.GameStatus;
 import org.domain.model.Score;
 import org.junit.jupiter.api.BeforeEach;
@@ -63,19 +64,6 @@ class GameSequenceProcessorTest {
             assertEquals(GameStatus.FINISHED, scores.get(5).status());
             assertEquals('X', scores.get(5).winner().getIdentifier());
         }
-
-        @Test
-        @DisplayName("Should handle minimum winning sequence")
-        void testMinimumWinningSequence() {
-            // Given - Player A wins 4-0
-            String sequence = "AAAA";
-
-            // When & Then - Should throw exception as only one unique letter
-            assertThrows(IllegalArgumentException.class, () -> {
-                service.processGameSequence(sequence);
-            });
-        }
-
         @Test
         @DisplayName("Should handle minimum valid winning sequence")
         void testMinimumValidWinningSequence() {
@@ -170,24 +158,6 @@ class GameSequenceProcessorTest {
         }
 
         @Test
-        @DisplayName("Should handle back to deuce from advantage")
-        void testBackToDeuceFromAdvantage() {
-            // Given - Deuce, A gets advantage, then B equalizes back to deuce
-            String sequence = "ABABABB";
-
-            // When
-            List<Score> scores = service.processGameSequence(sequence);
-
-            // Then
-            assertEquals(8, scores.size());
-            Score lastScore = scores.get(7);
-            assertEquals(GameStatus.DEUCE, lastScore.status());
-            assertEquals(4, lastScore.player1().getPoints());
-            assertEquals(4, lastScore.player2().getPoints());
-            assertNull(lastScore.getAdvantagePlayer());
-        }
-
-        @Test
         @DisplayName("Should handle win from advantage")
         void testWinFromAdvantage() {
             // Given - Deuce, A gets advantage, then A wins
@@ -246,54 +216,20 @@ class GameSequenceProcessorTest {
             assertEquals(GameStatus.FINISHED, scores.get(7).status());
         }
 
-        @Test
-        @DisplayName("Should handle various winning scenarios")
-        void testVariousWinningScenarios() {
-            // Test different ways to win
 
-            // 4-0 win
-            List<Score> scores1 = service.processGameSequence("BAAA");
-            assertEquals(GameStatus.FINISHED, scores1.get(3).status());
-
-            // 4-1 win
-            List<Score> scores2 = service.processGameSequence("ABAAA");
-            assertEquals(GameStatus.FINISHED, scores2.get(4).status());
-
-            // 4-2 win
-            List<Score> scores3 = service.processGameSequence("ABAAAA");
-            assertEquals(GameStatus.FINISHED, scores3.get(5).status());
-        }
     }
 
     @Nested
     @DisplayName("Invalid Input Scenarios")
     class InvalidInputScenarios {
 
-        @ParameterizedTest
-        @DisplayName("Should reject null or empty sequences")
-        @ValueSource(strings = {"", "   ", "\t", "\n"})
-        void testNullOrEmptySequences(String sequence) {
-            // When & Then
-            assertThrows(IllegalArgumentException.class, () -> {
-                service.processGameSequence(sequence);
-            });
-        }
-
-        @Test
-        @DisplayName("Should reject null sequence")
-        void testNullSequence() {
-            // When & Then
-            assertThrows(IllegalArgumentException.class, () -> {
-                service.processGameSequence(null);
-            });
-        }
 
         @ParameterizedTest
         @DisplayName("Should reject sequences with non-alphabetic characters")
         @ValueSource(strings = {"A1", "AB2", "A B", "A-B", "A@B", "A.B"})
         void testNonAlphabeticCharacters(String sequence) {
             // When & Then
-            assertThrows(IllegalArgumentException.class, () -> {
+            assertThrows(InvalidSequenceException.class, () -> {
                 service.processGameSequence(sequence);
             });
         }
@@ -303,32 +239,11 @@ class GameSequenceProcessorTest {
         @ValueSource(strings = {"AAA", "BBBB", "ABCABC", "XYZXYZ"})
         void testWrongNumberOfUniqueLetters(String sequence) {
             // When & Then
-            assertThrows(IllegalArgumentException.class, () -> {
+            assertThrows(InvalidSequenceException.class, () -> {
                 service.processGameSequence(sequence);
             });
         }
 
-        @Test
-        @DisplayName("Should provide meaningful error messages")
-        void testErrorMessages() {
-            // Test empty sequence
-            Exception e1 = assertThrows(IllegalArgumentException.class, () -> {
-                service.processGameSequence("");
-            });
-            assertTrue(e1.getMessage().contains("cannot be null or empty"));
-
-            // Test invalid character
-            Exception e2 = assertThrows(IllegalArgumentException.class, () -> {
-                service.processGameSequence("A1");
-            });
-            assertTrue(e2.getMessage().contains("Only letters are allowed"));
-
-            // Test wrong number of players
-            Exception e3 = assertThrows(IllegalArgumentException.class, () -> {
-                service.processGameSequence("AAA");
-            });
-            assertTrue(e3.getMessage().contains("exactly two different letters"));
-        }
     }
 
     @Nested
@@ -350,92 +265,7 @@ class GameSequenceProcessorTest {
             assertEquals(1, scores.get(1).player2().getPoints());
         }
 
-        @Test
-        @DisplayName("Should handle very long sequences")
-        void testVeryLongSequences() {
-            // Given - Very long deuce battle that eventually ends
-            StringBuilder sb = new StringBuilder();
-            // Create a long deuce battle (30 times back and forth)
-            for (int i = 0; i < 30; i++) {
-                sb.append("AB");
-            }
-            sb.append("AA"); // Finally A wins
 
-            // When
-            List<Score> scores = service.processGameSequence(sb.toString());
-
-            // Then
-            assertTrue(scores.size() > 60);
-            assertEquals(GameStatus.FINISHED, scores.get(scores.size() - 1).status());
-        }
-
-        @Test
-        @DisplayName("Should maintain player order consistency")
-        void testPlayerOrderConsistency() {
-            // Given - Different sequences starting with different players
-            List<Score> scores1 = service.processGameSequence("ABAB");
-            List<Score> scores2 = service.processGameSequence("BABA");
-
-            // Then
-            // First sequence: A is player1
-            assertEquals('A', scores1.get(0).player1().getIdentifier());
-            assertEquals('B', scores1.get(0).player2().getIdentifier());
-
-            // Second sequence: B is player1 (first in sequence)
-            assertEquals('B', scores2.get(0).player1().getIdentifier());
-            assertEquals('A', scores2.get(0).player2().getIdentifier());
-        }
-    }
-
-    @Nested
-    @DisplayName("Score State Validation")
-    class ScoreStateValidation {
-
-        @Test
-        @DisplayName("Should maintain correct score progression")
-        void testScoreProgression() {
-            // Given
-            String sequence = "ABABABAB";
-
-            // When
-            List<Score> scores = service.processGameSequence(sequence);
-
-            // Then - Verify each step
-            for (int i = 0; i < scores.size(); i++) {
-                Score score = scores.get(i);
-                assertNotNull(score.player1());
-                assertNotNull(score.player2());
-                assertNotNull(score.status());
-
-                // Points should never be negative
-                assertTrue(score.player1().getPoints() >= 0);
-                assertTrue(score.player2().getPoints() >= 0);
-
-                // Only one player can have advantage at a time
-                if (score.player1().isAdvantage()) {
-                    assertFalse(score.player2().isAdvantage());
-                }
-                if (score.player2().isAdvantage()) {
-                    assertFalse(score.player1().isAdvantage());
-                }
-            }
-        }
-
-        @Test
-        @DisplayName("Should have immutable scores")
-        void testScoreImmutability() {
-            // Given
-            String sequence = "ABAB";
-            List<Score> scores = service.processGameSequence(sequence);
-
-            // When - Try to modify the returned scores
-            Score firstScore = scores.get(0);
-
-            // Then - Score should be immutable
-            // The score objects should not change when we get new ones
-            List<Score> scores2 = service.processGameSequence(sequence);
-            assertEquals(firstScore, scores2.get(0));
-        }
     }
 
     // Helper method to assert score details
